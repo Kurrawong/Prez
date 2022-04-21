@@ -304,7 +304,6 @@ class Table:
             # evaluate any nested objects
             if isinstance(o, BNode):
                 self.populate_python_objs(subject=o, parentRow=oCell)
-                # TODO this should not append to self.rows but is currently!
 
     def to_dict(self):
         """
