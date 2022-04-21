@@ -1,7 +1,7 @@
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Union
 import json
 
-from rdflib import Graph
+from rdflib import Graph, BNode, URIRef
 from rdflib.namespace import DCTERMS, SKOS, RDFS
 
 from config import *
@@ -250,3 +250,62 @@ class SpacePrezFeature(PrezModel):
         properties.extend(other_props)
 
         return properties
+
+
+
+class TableCell:
+
+    def __init__(self, value: str, qname: str, label: str, datatype: str = None, langtag: str = None):
+        self.value = value
+        self.qname = qname
+        self.label = label
+        self.datatype = None
+        self.langtag = None
+        self.nested_rows = []
+
+class PredicateObjectPair:
+    def __init__(self, pred: TableCell, obj: TableCell):
+        self.pred = pred
+        self.obj = obj
+
+class Table:
+    def __init__(self, graph: Graph):
+        self.rows = []
+        self.special_rows = []
+        self.graph = graph
+
+    def populate_python_objs(self, subject: Union[URIRef, BNode], parentRow=None):
+        """
+        Takes an in memory graph returned from the SPARQL endpoint and populates the TableCell and TableRow objects
+        """
+        for p, o in self.graph.predicate_objects(subject):
+            pCell = TableCell(
+                value=p.__str__(),
+                qname=self.graph.namespace_manager.qname(p),
+                label=self.graph.value(subject=p, predicate=RDFS.label),
+                definition=self.graph.value(subject=p, predicate=SKOS.definition),
+                explanation=self.graph.value(subject=p, predicate=DCTERMS.provenance),
+                datatype=p.datatype
+                )
+            oCell = TableCell(
+                value=o.__str__(),
+                qname=self.graph.namespace_manager.qname(o),
+                label=self.graph.value(subject=o, predicate=RDFS.label),
+                definition=self.graph.value(subject=p, predicate=SKOS.definition),
+                datatype=o.datatype,
+                )
+
+            # if nested (i.e. there's a parentRow), add to the object, otherwise add to the table rows
+            if parentRow:
+                oCell.nested_rows.append(PredicateObjectPair(pCell, oCell))
+            else:
+                self.rows.append(PredicateObjectPair(pCell, oCell))
+
+            # evaluate any nested objects
+            if isinstance(o, BNode):
+                self.populate_python_objs(subject=o, parentRow=oCell)
+                # TODO this should not append to self.rows but is currently!
+
+    def to_dict(self):
+        """
+        """
