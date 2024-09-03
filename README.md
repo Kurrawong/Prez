@@ -16,7 +16,7 @@ Prez is quite simple and expects "high quality" data to work well. By requiring 
 
 - Linked Data delivery of any RDF graph content
     - human (HTML) & machine (RDF) formats
-    - configurable alternateive profiles available
+    - configurable alternative profiles available
 - structured according to standardised APIs
     - e.g. [OGC API: Features](http://www.opengis.net/doc/IS/ogcapi-features-1/1.0) for spatial data
     - Open API/Swagger UI for developers
